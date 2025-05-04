@@ -69,35 +69,33 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-        for i in range(self.lookback + 1, len(self.price)):
-            window = self.returns.iloc[i - self.lookback : i]
-            assets = self.price.columns[self.price.columns != self.exclude]
-
-            # Momentum over the window: (last / first) - 1
-            price_window = self.price[assets].iloc[i - self.lookback : i]
-            momentum = (price_window.iloc[-1] / price_window.iloc[0]) - 1
-
-            # Volatility: standard deviation of returns
-            volatility = window[assets].std(ddof=0)
-
-            # Signal: exponential reward for momentum, exponential penalty for volatility
-            score = (momentum + 1e-6) / (volatility + 1e-6)
-
-            # Select top 5 assets with positive score
-            top_assets = score[score > 0].nlargest(5)
-
-            # Initialize all weights to 0
-            full_row = pd.Series(0.0, index=self.price.columns)
-
-            if not top_assets.empty:
-                weights = top_assets / top_assets.sum()
-                full_row[top_assets.index] = weights
-
-            self.portfolio_weights.loc[self.price.index[i]] = full_row
-
-        print("DEBUG: Portfolio weights on crash day (e.g. 2022-01-03):")
-        print(self.portfolio_weights.loc["2022-01-03"])  # Or use .iloc if unsure
-        print("Sum of weights:", self.portfolio_weights.loc["2022-01-03"].sum())
+        for today in self.price.index[self.lookback:]:
+            # Define the lookback window for returns and volatility
+            window = self.returns.loc[
+                today - pd.Timedelta(days=self.lookback) : today, assets
+            ]
+            
+            # Calculate momentum (mean returns over the lookback period)
+            momentum = window.mean() * 252  # Annualized mean returns
+            # Calculate volatility (annualized population standard deviation)
+            vol = window.std(ddof=0) * np.sqrt(252)
+            vol[vol == 0] = 1e-8  # Guard against divide-by-zero
+            
+            # Select top 5 assets based on momentum
+            top_assets = momentum.nlargest(5).index
+            
+            # Compute inverse volatility weights for selected assets
+            inv_vol = 1.0 / vol[top_assets]
+            w = inv_vol / inv_vol.sum()  # Normalize weights to sum to 1
+            
+            # Apply weight constraints to ensure diversification
+            w = np.clip(w, 0.1, 0.3)  # Min 10%, max 30% per asset
+            w = w / w.sum()  # Re-normalize to sum to 1
+            
+            # Build full weight vector (SPY gets zero, unselected assets get zero)
+            full = pd.Series(0.0, index=self.price.columns)
+            full[top_assets] = w.values
+            self.portfolio_weights.loc[today] = full
         """
         TODO: Complete Task 4 Above
         """
@@ -175,7 +173,7 @@ class AssignmentJudge:
         df_bl["MP"] = pd.to_numeric(strategy[1]["Portfolio"], errors="coerce")
         sharpe_ratio = qs.stats.sharpe(df_bl)
 
-        print(f"[DEBUG] SPY Sharpe: {sharpe_ratio[0]:.4f}, MyPortfolio Sharpe: {sharpe_ratio[1]:.4f}")
+        # print(f"[DEBUG] SPY Sharpe: {sharpe_ratio[0]:.4f}, MyPortfolio Sharpe: {sharpe_ratio[1]:.4f}")
         
         if show == True:
             qs.reports.metrics(df_bl, mode="full", display=show)

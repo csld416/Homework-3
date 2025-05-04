@@ -129,15 +129,6 @@ class RiskParityPortfolio:
             full_row = pd.Series(0.0, index=df.columns, dtype=np.float64)
             full_row[assets] = weights.astype(np.float64)
             self.portfolio_weights.loc[df.index[i]] = full_row
-
-            # Debug print on key date
-            if df.index[i] == pd.Timestamp("2019-03-15"):
-                print(f">>> Risk Parity Debug ({df.index[i].date()})")
-                print("Volatility (ddof=0):")
-                print(vol)
-                print("\nWeights:")
-                print(weights)
-                print("\nWeight dtype:", weights.dtype)
         """
         TODO: Complete Task 2 Above
         """
@@ -394,12 +385,7 @@ class AssignmentJudge:
             if (
                 df1[column].dtype.kind in "bifc" and df2[column].dtype.kind in "bifc"
             ):  # Check only numeric types
-                # DEBUG
-                diff = np.abs(df1[column] - df2[column])
-                max_diff = diff.max()
-                # DEBUG
                 if not np.isclose(df1[column], df2[column], atol=tolerance).all():
-                    print(f"Column: {column}, Max diff: {max_diff}")  # DEBUG
                     return False
             else:
                 if not (df1[column] == df2[column]).all():
@@ -500,10 +486,10 @@ if __name__ == "__main__":
                 judge.check_answer_eqw(judge.eqw)
             if "rp" in args.score:
                 judge.check_answer_rp(judge.rp)
-                judge.rp.to_pickle("my_rp.pkl") #DEBUG
+                # judge.rp.to_pickle("my_rp.pkl") #DEBUG
             if "mv" in args.score:
                 judge.check_answer_mv_list(judge.mv_list)
-                judge.mv_list[0].to_pickle("my_mv.pkl") #DEBUG
+                # judge.mv_list[0].to_pickle("my_mv.pkl") #DEBUG
         elif "all" in args.score:
             print(f"==> total Score = {judge.check_all_answer()} <==")
 
