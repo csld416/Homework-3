@@ -1,0 +1,11 @@
+venv
+test_mv.py
+test_rp.py
+test2.py
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
